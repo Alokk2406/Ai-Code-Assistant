@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Code Assistant</title>
+
+<!-- Fonts: Chakra Petch (display/UI) + Inter (body) + JetBrains Mono (code) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Tailwind (utility helpers only -- visual identity lives in style.css) -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Prism.js for response syntax highlighting -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Ambient background: animated gradient + floating particle canvas -->
+  <div class="bg-gradient-anim"></div>
+  <canvas id="particles"></canvas>
+
+  <div class="app-shell">
+
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <span class="brand-mark">◆</span>
+        <span class="brand-text">CODE<span class="accent">.AI</span></span>
+      </div>
+
+      <nav class="nav-list" id="navList">
+        <button class="nav-item active" data-module="dashboard">
+          <span class="nav-ico">▣</span><span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-module="chat">
+          <span class="nav-ico">◈</span><span>AI Chat</span>
+        </button>
+        <button class="nav-item" data-module="generate">
+          <span class="nav-ico">⌁</span><span>Code Generator</span>
+        </button>
+        <button class="nav-item" data-module="debug">
+          <span class="nav-ico">⚠</span><span>Debugger</span>
+        </button>
+        <button class="nav-item" data-module="explain">
+          <span class="nav-ico">◎</span><span>Code Explainer</span>
+        </button>
+        <button class="nav-item" data-module="optimize">
+          <span class="nav-ico">⇡</span><span>Optimizer</span>
+        </button>
+        <button class="nav-item" data-module="complexity">
+          <span class="nav-ico">Σ</span><span>Complexity Analyzer</span>
+        </button>
+        <button class="nav-item" data-module="convert">
+          <span class="nav-ico">⇄</span><span>Code Converter</span>
+        </button>
+        <button class="nav-item" data-module="docs">
+          <span class="nav-ico">▤</span><span>Documentation</span>
+        </button>
+        <button class="nav-item" data-module="security">
+          <span class="nav-ico">⛨</span><span>Security Scanner</span>
+        </button>
+        <button class="nav-item" data-module="project">
+          <span class="nav-ico">✦</span><span>Project Generator</span>
+        </button>
+        <button class="nav-item" data-module="history">
+          <span class="nav-ico">⟲</span><span>History</span>
+        </button>
+        <button class="nav-item" data-module="settings">
+          <span class="nav-ico">⚙</span><span>Settings</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="status-pill" id="apiStatusPill">
+          <span class="dot" id="apiDot"></span>
+          <span id="apiStatusText">Checking API…</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ================= MAIN ================= -->
+    <div class="main-col">
+
+      <!-- Top nav -->
+      <header class="topbar">
+        <button class="icon-btn" id="sidebarToggle" title="Toggle sidebar">☰</button>
+
+        <div class="search-box">
+          <span class="search-ico">⌕</span>
+          <input type="text" placeholder="Search modules, history, snippets…" id="searchInput" />
+        </div>
+
+        <div class="topbar-right">
+          <select class="model-select" id="modelSelect">
+            <option>Gemini 1.5 Pro</option>
+            <option>GPT-4o mini</option>
+            <option>Ollama (local)</option>
+          </select>
+
+          <button class="icon-btn" title="Notifications">🔔</button>
+          <button class="icon-btn" id="themeToggle" title="Toggle theme">☾</button>
+
+          <div class="avatar" title="Profile">DV</div>
+        </div>
+      </header>
+
+      <!-- Module title strip -->
+      <div class="module-strip">
+        <h1 id="moduleTitle">Dashboard</h1>
+        <p id="moduleSubtitle">Your AI-powered programming companion — overview & quick actions.</p>
+      </div>
+
+      <!-- ============ DASHBOARD VIEW ============ -->
+      <section class="view active" id="view-dashboard">
+        <div class="stat-grid">
+          <div class="glass-card stat-card">
+            <span class="stat-label">Snippets generated</span>
+            <span class="stat-value" id="statGenerated">0</span>
+          </div>
+          <div class="glass-card stat-card">
+            <span class="stat-label">Bugs fixed</span>
+            <span class="stat-value" id="statDebugged">0</span>
+          </div>
+          <div class="glass-card stat-card">
+            <span class="stat-label">Conversions run</span>
+            <span class="stat-value" id="statConverted">0</span>
+          </div>
+          <div class="glass-card stat-card">
+            <span class="stat-label">Active model</span>
+            <span class="stat-value stat-value-sm">Gemini 1.5 Pro</span>
+          </div>
+        </div>
+
+        <div class="glass-card quick-actions">
+          <h3>Quick actions</h3>
+          <div class="quick-grid">
+            <button class="quick-btn" data-jump="generate">⌁ Generate code</button>
+            <button class="quick-btn" data-jump="debug">⚠ Debug a snippet</button>
+            <button class="quick-btn" data-jump="explain">◎ Explain code</button>
+            <button class="quick-btn" data-jump="convert">⇄ Convert language</button>
+            <button class="quick-btn" data-jump="security">⛨ Security scan</button>
+            <button class="quick-btn" data-jump="project">✦ Build a project</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CHAT VIEW ============ -->
+      <section class="view" id="view-chat">
+        <div class="glass-card chat-window" id="chatWindow">
+          <div class="chat-empty">Ask anything about programming — algorithms, patterns, errors, best practices.</div>
+        </div>
+        <div class="prompt-bar">
+          <input type="text" id="chatInput" placeholder="e.g. Explain binary search…" />
+          <button class="primary-btn" id="chatSend">Send</button>
+        </div>
+      </section>
+
+      <!-- ============ WORKSPACE VIEW (generator/debug/explain/optimize/complexity/docs/security) ============ -->
+      <section class="view" id="view-workspace">
+        <div class="workspace-grid">
+          <!-- Left: editor -->
+          <div class="glass-card panel editor-panel">
+            <div class="panel-header">
+              <span id="editorLangLabel">python</span>
+              <div class="panel-actions">
+                <select id="languageSelect" class="mini-select">
+                  <option value="python">Python</option>
+                  <option value="javascript">JavaScript</option>
+                  <option value="java">Java</option>
+                  <option value="c">C</option>
+                  <option value="cpp">C++</option>
+                  <option value="go">Go</option>
+                  <option value="rust">Rust</option>
+                  <option value="php">PHP</option>
+                  <option value="csharp">C#</option>
+                </select>
+                <button class="icon-btn sm" id="uploadBtn" title="Upload code">⇧</button>
+                <button class="icon-btn sm" id="copyEditorBtn" title="Copy code">⧉</button>
+                <input type="file" id="fileInput" hidden />
+              </div>
+            </div>
+            <div id="monacoEditor" class="monaco-host"></div>
+          </div>
+
+          <!-- Right: AI response -->
+          <div class="glass-card panel response-panel">
+            <div class="panel-header">
+              <span>AI Response</span>
+              <button class="icon-btn sm" id="copyResponseBtn" title="Copy response">⧉</button>
+            </div>
+            <div class="response-body" id="responseBody">
+              <div class="response-empty">Run an action below to see AI output here.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-bar workspace-prompt">
+          <input type="text" id="workspacePrompt" placeholder="Describe what to generate… (used by Generator & Project modules)" />
+          <button class="primary-btn" id="runActionBtn">Run</button>
+        </div>
+      </section>
+
+      <!-- ============ CONVERT VIEW ============ -->
+      <section class="view" id="view-convert">
+        <div class="convert-bar glass-card">
+          <select id="convertFrom" class="mini-select"></select>
+          <span class="convert-arrow">→</span>
+          <select id="convertTo" class="mini-select"></select>
+          <button class="primary-btn" id="convertRunBtn">Convert</button>
+        </div>
+        <div class="workspace-grid">
+          <div class="glass-card panel editor-panel">
+            <div class="panel-header"><span>Source code</span></div>
+            <div id="monacoEditorConvert" class="monaco-host"></div>
+          </div>
+          <div class="glass-card panel response-panel">
+            <div class="panel-header">
+              <span>Converted code</span>
+              <button class="icon-btn sm" id="copyConvertBtn" title="Copy result">⧉</button>
+            </div>
+            <div class="response-body" id="convertResponseBody">
+              <div class="response-empty">Converted code will appear here.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ HISTORY VIEW ============ -->
+      <section class="view" id="view-history">
+        <div class="glass-card">
+          <div class="panel-header">
+            <span>Recent activity</span>
+            <button class="icon-btn sm" id="clearHistoryBtn" title="Clear history">⌫</button>
+          </div>
+          <table class="history-table">
+            <thead>
+              <tr><th>Action</th><th>Detail</th><th>When</th></tr>
+            </thead>
+            <tbody id="historyBody">
+              <tr><td colspan="3" class="muted">No history yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ SETTINGS VIEW ============ -->
+      <section class="view" id="view-settings">
+        <div class="glass-card settings-card">
+          <h3>API configuration</h3>
+          <label class="field-label">Backend URL</label>
+          <input type="text" id="apiBaseInput" class="text-field" />
+          <button class="primary-btn" id="saveApiBaseBtn">Save</button>
+          <p class="muted small">The AI provider itself (Gemini / OpenAI / Ollama) is configured server-side in <code>backend/services/ai_service.py</code> via environment variables.</p>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toastStack"></div>
+
+  <!-- Monaco loader -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.49.0/min/vs/loader.min.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
